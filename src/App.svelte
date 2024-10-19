@@ -1,95 +1,98 @@
 <script>
   import data from './lib/movies';
+  import Navbar from './lib/components/Navbar.svelte';
+  import Modal from './lib/components/Modal.svelte';
+  import Movies from './lib/components/Movies.svelte';
+  import Event from "./lib/components/Event.svelte";
+  import SearchBar from "./lib/components/SearchBar.svelte";
+  import {onDestroy, onMount} from "svelte";
 
-  const handleLike = ({index}) => {
-    data[index].likeCount += 1;
+  const eventText = [
+    "NETPLIX 강렬한 운명의 드라마, 경기크리처",
+    "NETPLIX 미스터리 스릴러, 더 블랙리스트",
+    "NETPLIX 로맨틱 코미디, 브리짓 존스의 일기",
+  ]
+
+  let data_temp = [...data];
+
+  const handleLike = (id) => {
+    data.map(movie => {
+      if (movie.id === id) {
+        movie.likeCount++;
+      }
+    });
+    data_temp = data.filter(movie => {
+      return data_temp.includes(movie);
+    })
   };
 
   let isModal = false;
-  let selectedMovie = 0;
+  let selectedMovie = {};
+
+  const closeModal = () => {
+    isModal = false;
+  }
+  const openModal = (i) => {
+    isModal = true;
+    selectedMovie = data.find(movie => movie.id === i);
+  }
+
+  let isEvent = true;
+  const closeEvent = () => {
+    isEvent = false;
+  }
+
+  let alertText = ""
+  let eventIndex = 0;
+  let intervalEventId;
+
+  onMount(() => {
+    intervalEventId = setInterval(() => {
+      eventIndex++;
+      console.log("interval event")
+    }, 3000);
+  });
 </script>
 
-<main class="container">
-  <h1>영화정보</h1>
-  {#each data as item, i}
-    <div class="item">
-      <figure>
-        <img src={item.imageUrl} alt={item.title}/>
-      </figure>
-      <div class="info">
-        <h3 class="bg-yellow">{item.title}</h3>
-        <p>개봉: {item.year}</p>
-        <p>장르: {item.category}</p>
-        <button on:click={
-                () => {handleLike({index: i})}
-            }>좋아요 {item.likeCount}
-        </button>
-        <button class="btn btn-primary" on:click={() => {
-          isModal = true;
-          selectedMovie = i;
-          }}>상세보기
-        </button>
-      </div>
-    </div>
-  {/each}
-</main>
+<Navbar/>
+
+{#if isEvent}
+  <Event
+      {closeEvent}
+      {eventText}
+      {eventIndex}
+      {intervalEventId}
+  />
+{/if}
+
+<SearchBar
+    {data}
+    bind:data_temp
+    bind:alertText
+/>
+
+<div class="container">
+  <button on:click={() => {
+  data_temp = [...data];
+  alertText = ""
+}}>전체보기</button>
+</div>
+
+<Movies
+    {data_temp}
+    {openModal}
+    {handleLike}
+/>
 
 {#if isModal}
-  <div class="modal">
-    <div class="inner">
-      <h3>{data[selectedMovie].title}</h3>
-      <p>
-        {@html data[selectedMovie].story}
-      </p>
-      <button class="btn-close" on:click={() => isModal = false}>닫기</button>
-    </div>
-  </div>
+  <Modal
+      {selectedMovie}
+      {closeModal}
+  />
 {/if}
 
 <style>
-  .bg-yellow {
-    background-color: gold;
-    padding: 10px;
-    color: black;
-  }
-
-  .item {
-    width: 100%;
-    border: 1px solid #ccc;
-    display: flex;
-    margin-bottom: 20px;
-    padding: 1rem;
-  }
-
-  .item figure {
-    width: 30%;
-    margin-right: 1rem;
-  }
-
-  .item img {
-    width: 100%;
-  }
-
-  .item .info {
-    width: 100%;
-  }
-
-  .modal {
-    background: rgba(0, 0, 0, 0.7);
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .modal .inner {
-    background: #fff;
-    width: 80%;
-    padding: 20px;
-    border-radius: 10px;
+  .container {
+    text-align: center;
   }
 </style>
